@@ -6,6 +6,11 @@
 # Date: 11/15/2018
 
 # %%
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import Imputer
 from pandas.plotting import scatter_matrix
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import train_test_split
@@ -171,12 +176,12 @@ corr_matrix = housing.corr()
 corr_matrix
 
 # Variable transforms
-#%%
+# %%
 # Get copy of only IVs (.drop() creates copy by default)
 housing = strat_train_set.drop('median_house_value', axis=1)
 housing_labels = strat_train_set['median_house_value'].copy()
 
-#%%
+# %%
 # Clean missing
 # Row-wise deletion
 # housing.dropna(subset=['total_bedrooms'], axis=1)
@@ -186,7 +191,6 @@ housing_labels = strat_train_set['median_house_value'].copy()
 # housing['total_bedrooms'].fillna(housing['total_bedrooms'].medain, inPlace=True)
 
 # Median replacement with SciKit Learn
-from sklearn.preprocessing import Imputer
 imputer = Imputer(strategy='median')
 
 # Cat vars don't have medians
@@ -201,21 +205,137 @@ X = imputer.transform(housing_num)
 # Imputer's output is a numpy array so:
 housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 
-#%%
+# %%
 # Convert cat var to (numeric) factor
 housing_cat = housing['ocean_proximity']
 housing_cat_encoded, housing_categories = housing_cat.factorize()
 housing_cat_encoded[:10]
 housing_categories
 
-#%%
+# %%
 # Dummy coding with SciKit Learn
 # SKLearn calls dummy coding 'one hot encoding'
-from sklearn.preprocessing import OneHotEncoder
 encoder = OneHotEncoder()
 # Reshape because OneHotEncoder() takes a 2-D array
-housing_cat_1hot = encoder.fit_transform(housing_cat_encoded.reshape(-1,1))
+housing_cat_1hot = encoder.fit_transform(housing_cat_encoded.reshape(-1, 1))
 # Returns a sparse array
 housing_cat_1hot
 
+# %%
+# Creating custom SKLearn transformers
+# Requires fit(), transform(), and fit_transform()
+# Derrive from BaseEstimator to get useful get/set params methods
+rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6
 
+
+class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
+    """Custom attribute addition transformer."""
+
+    def __init__(self, add_bedrooms_per_room=True):
+        self.add_bedrooms_per_room = add_bedrooms_per_room
+
+    def fit(self, X, y=None):
+        """Implementation of transformer fit() method.
+
+        Arguments:
+            X {dataframe} -- A Pandas dataframe
+
+        Keyword Arguments:
+            y {array} -- Optional outcome vector (default: {None})
+        """
+        return self  # Nothing else to do
+
+    def transform(self, X, y=None):
+        """Implementation of transformer transform() method.
+        Returns values from input dataframe.
+
+        Arguments:
+            X {dataframe} -- A Pandas dataframe
+        """
+        rooms_per_household = X[:, rooms_ix] / X[:, household_ix]
+        population_per_household = X[:, population_ix] / X[:, household_ix]
+
+        if self.add_bedrooms_per_room:
+            bedrooms_per_room = X[:, bedrooms_ix] / X[:, rooms_ix]
+            return np.c_[X, rooms_per_household, population_per_household,
+                         bedrooms_per_room]
+        else:
+            return np.c_[X, rooms_per_household, population_per_household]
+
+
+attr_adder = CombinedAttributesAdder(add_bedrooms_per_room=False)
+housing_extra_attribs = attr_adder.transform(housing.values)
+
+# %%
+# Scikit Learn provides a convenient Pipeline class for, well, a pipeline
+
+# Initialize the pipeline
+num_pipeline = Pipeline([
+    ('imputer', Imputer(strategy='median')),
+    ('attribs_adder', CombinedAttributesAdder()),
+    ('std_scaler', StandardScaler()),  # Z-score scaling
+])
+
+# Call the pipeline on the data
+# All steps except last must have tranform() methods
+housing_num_tr = num_pipeline.fit_transform(housing_num)
+
+# %%
+# Need to write our own transformer to send Pandas dataframe through a pipeline
+
+
+class DataFrameSelector(BaseEstimator, TransformerMixin):
+    """Custom transformer to work with Pandas dataframes 
+    in SKLearn pipelines.
+    Keep desired variables and pass along as array."""
+
+    def __init__(self, attribute_names):
+        self.attribute_names = attribute_names
+
+    def fit(self, X, y=None):
+        """Implementation of transformer fit() method.
+
+        Arguments:
+            X {dataframe} -- A Pandas dataframe
+
+        Keyword Arguments:
+            y {array} -- Optional outcome vector (default: {None})
+        """
+        return self
+
+    def transform(self, X):
+        """Implementation of transformer transform() method.
+        Returns values from input dataframe.
+
+        Arguments:
+            X {dataframe} -- A Pandas dataframe
+        """
+        return X[self.attribute_names].values
+
+
+#%%
+# Run multiple pipelines (concurrently) and concatenate results
+from sklearn.pipeline import FeatureUnion
+
+num_attribs = list(housing_num)
+cat_attribs = ['ocean_proximity']
+
+num_pipeline = Pipeline([
+    ('selector', DataFrameSelector(num_attribs)),
+    ('imputer', Imputer(strategy='median')),
+    ('attribs_adder', CombinedAttributesAdder()),
+    ('std_scaler', StandardScaler()),
+])
+
+cat_pipeline = Pipeline([
+    ('selector', DataFrameSelector(cat_attribs)),
+    ('cat_encoder', OneHotEncoder(housing_cat_encoded, sparse=False))
+])
+
+full_pipeline = FeatureUnion(transformer_list=[
+    ('num_pipeline', num_pipeline),
+    ('cat_pipeline', cat_pipeline),
+])
+
+# Now call the unified pipeline
+housing_prepared = full_pipeline.fit_transform(housing)
