@@ -201,5 +201,21 @@ X = imputer.transform(housing_num)
 # Imputer's output is a numpy array so:
 housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 
+#%%
+# Convert cat var to (numeric) factor
+housing_cat = housing['ocean_proximity']
+housing_cat_encoded, housing_categories = housing_cat.factorize()
+housing_cat_encoded[:10]
+housing_categories
+
+#%%
+# Dummy coding with SciKit Learn
+# SKLearn calls dummy coding 'one hot encoding'
+from sklearn.preprocessing import OneHotEncoder
+encoder = OneHotEncoder()
+# Reshape because OneHotEncoder() takes a 2-D array
+housing_cat_1hot = encoder.fit_transform(housing_cat_encoded.reshape(-1,1))
+# Returns a sparse array
+housing_cat_1hot
 
 
