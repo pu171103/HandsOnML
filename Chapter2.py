@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from six.moves import urllib
+from zlib import crc32
 
 # Grab example CA housing data
 download_root = 'https://raw.githubusercontent.com/ageron/handson-ml/master/'
@@ -30,6 +31,7 @@ housing_tgz = tarfile.open(name=tgz_path)
 housing_tgz.extractall(path=housing_path)
 housing_tgz.close()
 os.remove('.\\datasets\\housing\\housing.tgz')
+
 
 # %%
 # Load data into Pandas dataframe
@@ -60,10 +62,24 @@ def split_train_test(data, test_ratio):
     """
 
     shuffled_indices = np.random.permutation(len(data))
-    test_set_size = int(len(data)) * test_ratio
+    test_set_size = int(len(data) * test_ratio)
     test_indices = shuffled_indices[:test_set_size]
     train_indices = shuffled_indices[test_set_size:]
 
     return data.iloc[train_indices], data.iloc[test_indices]
 
+train_set, test_set = split_train_test(housing, 0.2)
 
+# One way to pick and retrieve the same random rows for a test set
+# Hash some ID and select rows where hash < 20% max hash value
+
+
+def test_set_check(identifier, test_ratio):
+    """Select rows with hash of ID column less than test 
+    ratio proportion of max hash value
+    
+    Arguments:
+        identifier {array} -- A column of a Pandas data frame
+        test_ratio {float} -- Proportion of data for test set
+    """
+    return crc32(np.int64(identifier)) & 0xffffffff < test_ratio * 2**32
