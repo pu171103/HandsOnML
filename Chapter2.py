@@ -68,6 +68,7 @@ def split_train_test(data, test_ratio):
 
     return data.iloc[train_indices], data.iloc[test_indices]
 
+
 train_set, test_set = split_train_test(housing, 0.2)
 
 # One way to pick and retrieve the same random rows for a test set
@@ -77,9 +78,27 @@ train_set, test_set = split_train_test(housing, 0.2)
 def test_set_check(identifier, test_ratio):
     """Select rows with hash of ID column less than test 
     ratio proportion of max hash value
-    
+
     Arguments:
         identifier {array} -- A column of a Pandas data frame
         test_ratio {float} -- Proportion of data for test set
     """
     return crc32(np.int64(identifier)) & 0xffffffff < test_ratio * 2**32
+
+
+def split_train_test_by_id(data, test_ratio, id_column):
+    """Get test set by hashing ID values.
+
+    Arguments:
+        data {dataframe} -- A Pandas dataframe to be split
+        test_ratio {float} -- Proportion of data for test set
+        id_column {column} -- Pandas dataframe column to be hashed
+    """
+    ids = data[id_column]
+    in_test_set = ids.apply(lambda id_: test_set_check(id_, test_ratio))
+    return data.loc[~in_test_set], data.loc[in_test_set]
+
+
+# Designate an ID column
+# We can just use the row index
+housing_with_id = housing.reset_index()
