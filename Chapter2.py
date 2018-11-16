@@ -98,7 +98,14 @@ def split_train_test_by_id(data, test_ratio, id_column):
     in_test_set = ids.apply(lambda id_: test_set_check(id_, test_ratio))
     return data.loc[~in_test_set], data.loc[in_test_set]
 
-
 # Designate an ID column
 # We can just use the row index
 housing_with_id = housing.reset_index()
+train_set, test_set = split_train_test_by_id(housing_with_id, 0.2, 'index')
+
+# Scikit-Learn provides its own splitting function
+# Param random_state sets the seed
+from sklearn.model_selection import train_test_split
+train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+
+
