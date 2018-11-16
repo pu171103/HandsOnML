@@ -5,19 +5,20 @@
 # Author: Pat Underwood
 # Date: 11/15/2018
 
-#%%
+# %%
 import os
 import tarfile
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from six.moves import urllib
 
 # Grab example CA housing data
 download_root = 'https://raw.githubusercontent.com/ageron/handson-ml/master/'
-housing_path  = os.path.join('datasets', 'housing')
-housing_url   = download_root + "datasets/housing/housing.tgz"
+housing_path = os.path.join('datasets', 'housing')
+housing_url = download_root + "datasets/housing/housing.tgz"
 
-#%%
+# %%
 # Shell controll with os package
 # Create a directory
 os.makedirs(housing_path)
@@ -30,7 +31,7 @@ housing_tgz.extractall(path=housing_path)
 housing_tgz.close()
 os.remove('.\\datasets\\housing\\housing.tgz')
 
-#%%
+# %%
 # Load data into Pandas dataframe
 csv_path = os.path.join(housing_path, "housing.csv")
 housing = pd.read_csv(csv_path)
@@ -44,8 +45,25 @@ housing['ocean_proximity'].value_counts()
 housing.describe()
 
 # Easy histogram matrix
-housing.hist(bins=50, figsize=(20,15))
+housing.hist(bins=50, figsize=(20, 15))
 plt.show()
 
 # Test/Train split function
+
+
+def split_train_test(data, test_ratio):
+    """Split data into training and test sets.
+
+    Arguments:
+        data {dataframe} -- Data in Pandas dataframe.
+        test_ratio {float} -- Proportion of data for test set.
+    """
+
+    shuffled_indices = np.random.permutation(len(data))
+    test_set_size = int(len(data)) * test_ratio
+    test_indices = shuffled_indices[:test_set_size]
+    train_indices = shuffled_indices[test_set_size:]
+
+    return data.iloc[train_indices], data.iloc[test_indices]
+
 
