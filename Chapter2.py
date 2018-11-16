@@ -113,4 +113,33 @@ train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 housing['income_cat'] = np.ceil(housing['median_income'] / 1.5) # New var
 # Return true when income_cat < 5, 5.0 with false, modify DF in place
 housing['income_cat'].where(housing['income_cat'] < 5, 5.0, inplace=True)
+housing['income_cat'].hist()
+plt.show()
+
+# Do stratified sampling with SciKit Learn
+from sklearn.model_selection import StratifiedShuffleSplit
+split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+
+for train_index, test_index in split.split(housing, housing['income_cat']):
+    strat_train_set = housing.loc[train_index]
+    strat_test_set  = housing.loc[test_index]
+
+# Drop the categorical variable, but keep the stratified splits
+for set_ in (strat_train_set, strat_test_set):
+    set_.drop('income_cat', axis=1, inplace=True)
+
+
+# Exploratory Visualization
+hosuing = strat_train_set.copy() # New object, not a pointer
+plt.show(housing.plot(kind='scatter', x='longitude', y='latitude'))
+plt.show(housing.plot(kind='scatter', x='longitude', y='latitude', alpha=.1))
+
+# Params: s-> size dimension, c-> color dimension
+housing.plot(kind='scatter', x='longitude', y='latitude', alpha=.1,
+                s=housing['population'] / 100, 
+                label='Population', figsize = (10,7),
+                c='median_house_value', 
+                cmap=plt.get_cmap('jet'), colorbar=True)
+plt.legend() # Initialize legend constructor
+plt.show()
 
