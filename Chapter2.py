@@ -109,3 +109,8 @@ from sklearn.model_selection import train_test_split
 train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 
 
+# Convert median income to a (new) categorical variable
+housing['income_cat'] = np.ceil(housing['median_income'] / 1.5) # New var
+# Return true when income_cat < 5, 5.0 with false, modify DF in place
+housing['income_cat'].where(housing['income_cat'] < 5, 5.0, inplace=True)
+
