@@ -164,7 +164,42 @@ scatter_matrix(housing[attributes], figsize=(12, 8))
 housing['rooms_per_household'] = housing['total_rooms'] / housing['households']
 housing['bedrooms_per_room'] = housing['total_bedrooms'] / \
     housing['total_rooms']
-hosuing['population_per_household'] = housing['population'] / \
+housing['population_per_household'] = housing['population'] / \
     housing['households']
-#%%
 housing.head()
+corr_matrix = housing.corr()
+corr_matrix
+
+# Variable transforms
+#%%
+# Get copy of only IVs (.drop() creates copy by default)
+housing = strat_train_set.drop('median_house_value', axis=1)
+housing_labels = strat_train_set['median_house_value'].copy()
+
+#%%
+# Clean missing
+# Row-wise deletion
+# housing.dropna(subset=['total_bedrooms'], axis=1)
+# Variable deletion
+# housing.drop('total_bedrooms', axis=1)
+# Median replacement
+# housing['total_bedrooms'].fillna(housing['total_bedrooms'].medain, inPlace=True)
+
+# Median replacement with SciKit Learn
+from sklearn.preprocessing import Imputer
+imputer = Imputer(strategy='median')
+
+# Cat vars don't have medians
+housing_num = housing.drop('ocean_proximity', axis=1)
+# Initializer a (median replacement) imputer
+imputer.fit(housing_num)
+imputer.statistics_
+housing_num.median().values
+# Call the imputer
+# Note: fit_transform() combines these steps
+X = imputer.transform(housing_num)
+# Imputer's output is a numpy array so:
+housing_tr = pd.DataFrame(X, columns=housing_num.columns)
+
+
+
