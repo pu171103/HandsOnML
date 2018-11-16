@@ -1,3 +1,7 @@
-env/
-settings.json
+# Extensions
 *.csv
+# Directories
+env/
+# Files
+launch.json
+settings.json
