@@ -247,10 +247,10 @@ class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
         """Implementation of transformer transform() method.
-        Returns derrived variables.
+        Returns original data matrix plus derrived variables.
 
         Arguments:
-            X {dataframe} -- A Pandas dataframe
+            X {dataframe} -- A NumPy array.
         """
         rooms_per_household = X[:, rooms_ix] / X[:, household_ix]
         population_per_household = X[:, population_ix] / X[:, household_ix]
@@ -313,6 +313,28 @@ class DataFrameSelector(BaseEstimator, TransformerMixin):
         """
         return X[self.attribute_names].values
 
+class DataFactorizer(BaseEstimator, TransformerMixin):
+    """Convert categorical Pandas column to numeric Numpy factor"""
+    def __init__(self, attribute_names):
+        self.attribute_names = attribute_names
+    
+    def fit(self, X):
+        """Implementation of transformer fit() method.
+        
+        Arguments:
+            X {dataframe} -- A Pandas dataframe.
+        """
+        return self
+    
+    def transform(self, X):
+        """Implementation of transformer transform() method.
+        
+        Arguments:
+            X {dataframe} -- A Pandas dataframe.
+        """
+        factorized_var = X[self.attribute_names].iloc[:,0].factorize()[0]
+        return factorized_var.reshape(-1, 1)
+        
 
 #%%
 # Run multiple pipelines (concurrently) and concatenate results
@@ -329,8 +351,8 @@ num_pipeline = Pipeline([
 ])
 
 cat_pipeline = Pipeline([
-    ('selector', DataFrameSelector(cat_attribs)),
-    ('cat_encoder', OneHotEncoder(housing_cat_encoded, sparse=False))
+    ('factorizer', DataFactorizer(cat_attribs)),
+    ('cat_encoder', OneHotEncoder(sparse=False))
 ])
 
 full_pipeline = FeatureUnion(transformer_list=[
