@@ -6,6 +6,7 @@
 # Date: 11/15/2018
 
 # %%
+from sklearn.pipeline import FeatureUnion
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -225,7 +226,7 @@ housing_cat_1hot
 # Creating custom SKLearn transformers
 # Requires fit(), transform(), and fit_transform()
 # Derrive from BaseEstimator to get useful get/set params methods
-rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6 #col positions
+rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6  # col positions
 
 
 class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
@@ -313,32 +314,33 @@ class DataFrameSelector(BaseEstimator, TransformerMixin):
         """
         return X[self.attribute_names].values
 
+
 class DataFactorizer(BaseEstimator, TransformerMixin):
     """Convert categorical Pandas column to numeric Numpy factor"""
+
     def __init__(self, attribute_names):
         self.attribute_names = attribute_names
-    
+
     def fit(self, X):
         """Implementation of transformer fit() method.
-        
+
         Arguments:
             X {dataframe} -- A Pandas dataframe.
         """
         return self
-    
+
     def transform(self, X):
         """Implementation of transformer transform() method.
-        
+
         Arguments:
             X {dataframe} -- A Pandas dataframe.
         """
-        factorized_var = X[self.attribute_names].iloc[:,0].factorize()[0]
+        factorized_var = X[self.attribute_names].iloc[:, 0].factorize()[0]
         return factorized_var.reshape(-1, 1)
-        
 
-#%%
+
+# %%
 # Run multiple pipelines (concurrently) and concatenate results
-from sklearn.pipeline import FeatureUnion
 
 num_attribs = list(housing_num)
 cat_attribs = ['ocean_proximity']
@@ -362,3 +364,24 @@ full_pipeline = FeatureUnion(transformer_list=[
 
 # Now call the unified pipeline
 housing_prepared = full_pipeline.fit_transform(housing)
+
+#%%
+# Specify an OLS model
+from sklearn.linear_model import LinearRegression
+
+# Standard syntax is LinearRegression().fit(IVs, DV)
+lin_reg = LinearRegression()
+lin_reg.fit(housing_prepared, housing_labels)
+
+some_data = housing.iloc[:5]
+some_labels = housing_labels.iloc[:5]
+some_data_prepared = full_pipeline.transform(some_data)
+
+# Predict outcomes
+print("Predictions:", lin_reg.predict(some_data_prepared))
+print("Labels:", list(some_labels))
+
+#%%
+# Model evaluation: MSE
+
+
