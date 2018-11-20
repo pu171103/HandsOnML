@@ -215,7 +215,7 @@ housing_categories
 # %%
 # Dummy coding with SciKit Learn
 # SKLearn calls dummy coding 'one hot encoding'
-encoder = OneHotEncoder()
+encoder = OneHotEncoder(sparse=False)
 # Reshape because OneHotEncoder() takes a 2-D array
 housing_cat_1hot = encoder.fit_transform(housing_cat_encoded.reshape(-1, 1))
 # Returns a sparse array
@@ -225,7 +225,7 @@ housing_cat_1hot
 # Creating custom SKLearn transformers
 # Requires fit(), transform(), and fit_transform()
 # Derrive from BaseEstimator to get useful get/set params methods
-rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6
+rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6 #col positions
 
 
 class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
@@ -247,7 +247,7 @@ class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
         """Implementation of transformer transform() method.
-        Returns values from input dataframe.
+        Returns derrived variables.
 
         Arguments:
             X {dataframe} -- A Pandas dataframe
@@ -256,6 +256,7 @@ class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
         population_per_household = X[:, population_ix] / X[:, household_ix]
 
         if self.add_bedrooms_per_room:
+            # np.c equivalent to R's c
             bedrooms_per_room = X[:, bedrooms_ix] / X[:, rooms_ix]
             return np.c_[X, rooms_per_household, population_per_household,
                          bedrooms_per_room]
