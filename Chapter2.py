@@ -6,6 +6,10 @@
 # Date: 11/15/2018
 
 # %%
+from sklearn.model_selection import cross_val_score
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import FeatureUnion
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -365,9 +369,8 @@ full_pipeline = FeatureUnion(transformer_list=[
 # Now call the unified pipeline
 housing_prepared = full_pipeline.fit_transform(housing)
 
-#%%
+# %%
 # Specify an OLS model
-from sklearn.linear_model import LinearRegression
 
 # Standard syntax is LinearRegression().fit(IVs, DV)
 lin_reg = LinearRegression()
@@ -381,20 +384,27 @@ some_data_prepared = full_pipeline.transform(some_data)
 print("Predictions:", lin_reg.predict(some_data_prepared))
 print("Labels:", list(some_labels))
 
-#%%
+# %%
 # Model evaluation: (R)MSE
-from sklearn.metrics import mean_squared_error
 
 housing_predictions = lin_reg.predict(housing_prepared)
 lin_mse = mean_squared_error(housing_labels, housing_predictions)
 lin_rmse = np.sqrt(lin_mse)
 
-#%%
+# %%
 # Specify a decision tree
-from sklearn.tree import DecisionTreeRegressor
 
 tree_reg = DecisionTreeRegressor()
 tree_reg.fit(housing_prepared, housing_labels)
 housing_predictions = tree_reg.predict(housing_prepared)
 tree_mse = mean_squared_error(housing_labels, housing_predictions)
+tree_rmse = np.sqrt(tree_mse)
 
+# %%
+# K-Fold Cross Validation
+
+scores = cross_val_score(tree_reg, housing_prepared, housing_labels,
+                         scoring='neg_mean_squared_error', cv=10)
+tree_rmse_scores = np.sqrt(-scores)
+print('Scores:\t{0}\nMean:\t{1:.0f}\nStandard Deviation:\t{2:.0f}'.format(
+    tree_rmse_scores, tree_rmse_scores.mean(), tree_rmse_scores.std()))
