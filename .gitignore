@@ -2,6 +2,7 @@
 *.csv
 # Directories
 env/
+env36/
 # Files
 launch.json
 settings.json
