@@ -7,6 +7,7 @@
 
 import requests
 import os
+import tarfile
 
 
 def GetData(url, save_dir, file_name):
@@ -56,3 +57,15 @@ GetData(url, save_dir, file_name)
 url = 'https://raw.githubusercontent.com/ageron/handson-ml/master/datasets/lifesat/README.md'
 file_name = 'README.md'
 GetData(url, save_dir, file_name)
+
+
+# California Housing Data (SKlearn)
+url = 'https://ndownloader.figshare.com/files/5976036'
+save_dir = os.path.join(root_dir, 'california')
+file_name = 'cal_housing.tgz'
+GetData(url, save_dir, file_name)
+
+full_path = os.path.join(save_dir, file_name)
+cali_tgz = tarfile.open(name=full_path)
+cali_tgz.extractall(path=save_dir)
+cali_tgz.close()
