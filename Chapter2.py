@@ -6,6 +6,7 @@
 # Date: 11/15/2018
 
 # %%
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_squared_error
@@ -26,6 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from six.moves import urllib
 from zlib import crc32
+
 
 # Grab example CA housing data
 download_root = 'https://raw.githubusercontent.com/ageron/handson-ml/master/'
@@ -408,3 +410,15 @@ scores = cross_val_score(tree_reg, housing_prepared, housing_labels,
 tree_rmse_scores = np.sqrt(-scores)
 print('Scores:\t{0}\nMean:\t{1:.0f}\nStandard Deviation:\t{2:.0f}'.format(
     tree_rmse_scores, tree_rmse_scores.mean(), tree_rmse_scores.std()))
+
+# %%
+# Specify random forest model
+
+forest_reg = RandomForestRegressor()
+forest_reg.fit(housing_prepared, housing_labels)
+housing_predictions = forest_reg.predict(housing_prepared)
+forest_rmse = np.sqrt(mean_squared_error(housing_labels, housing_predictions))
+forest_rmse_scores = np.sqrt(-(cross_val_score(
+    forest_reg, housing_prepared, housing_labels,
+    scoring='neg_mean_squared_error', cv=10
+)))
