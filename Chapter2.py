@@ -454,3 +454,27 @@ grid_search.best_params_
 # Now fit with the 'best' hyperparameter values
 grid_search.best_estimator_
 grid_search.predict(housing) #... ect
+
+# We can easily get the CV scores. 
+cvres = grid_search.cv_results_
+for mean_score, params in zip(cvres['mean_test_score'], cvres['params']):
+    print(np.sqrt(-mean_score), params)
+
+#%%
+# Get and display variable importance measures
+feature_importances = grid_search.best_estimator_.feature_importances_
+extra_attribs = ['rooms_per_hhold', 'pop_per_hhold', 'bedrooms_pre_room']
+cat_one_hot_attribs = ['<1H OCEAN', 'NEAR OCEAN', 'NEAR BAY', 'ISLAND']
+attributes = num_attribs + extra_attribs + cat_one_hot_attribs
+sorted(zip(feature_importances, attributes), reverse=True)
+
+#%% 
+# Cross validate on the test set
+final_model = grid_search.best_estimator_
+X_test = strat_test_set.drop('median_house_value', axis=1)
+y_test = strat_test_set['median_house_value'].copy()
+X_test_prepared = full_pipeline.transform(X_test)
+
+final_predictions = final_model.predict(X_test_prepared)
+final_mse = mean_squared_error(y_test, final_predictions)
+final_rmse = np.sqrt(final_mse)
