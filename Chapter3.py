@@ -10,6 +10,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_mldata
+from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import StratifiedKFold
+from sklearn.base import clone
 from scipy.io.matlab import loadmat
 
 # Use helper function to download MNIST data
@@ -42,4 +46,37 @@ X_train, X_test, y_train, y_test = X[:60000], X[60000:], y[:60000], y[60000:]
 shuffle_index = np.random.permutation(60000)
 X_train, y_train = X_train[shuffle_index], y_train[shuffle_index]
 
+#%%
+# Binary classification
+# y=5 => 1/True; y!=5 => 0/False
+y_train_5 = (y_train == 5)
+y_test_5 = (y_test == 5)
+
+# Convert outcome vector to a 1D array to work with SGDClassifier
+y_train_5 = y_train_5.ravel()
+
+sgd_clf = SGDClassifier(random_state=42)
+sgd_clf.fit(X_train, y_train_5)
+sgd_clf.predict([some_digit])
+
+#%%
+# Aside example: custom cross validation
+# Use StratifiedKFold() to generate the validation sets, then loop
+# over each pair and get pct correctly predicted
+# SKlearn provides clone() to copy model objects
+skfolds = StratifiedKFold(n_splits=3, random_state=42)
+for train_index, test_index in skfolds.split(X_train, y_train_5):
+    clone_clf = clone(sgd_clf)
+    X_train_folds = X_train[train_index]
+    y_train_folds = y_train_5[train_index]
+    X_test_fold = X_train[test_index]
+    y_test_fold = y_train_5[test_index]
+    clone_clf.fit(X_train_folds, y_train_folds)
+    y_pred = clone_clf.predict(X_test_fold)
+    n_correct = sum(y_pred == y_test_fold)
+    print(n_correct / len(y_pred))
+
+#%%
+# Cross validation
+cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring='accuracy')
 
