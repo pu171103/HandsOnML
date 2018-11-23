@@ -6,6 +6,9 @@
 # Date: 11/15/2018
 
 # %%
+from sklearn.svm import SVR
+from sklearn.model_selection import GridSearchCV
+from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeRegressor
@@ -347,7 +350,6 @@ class DataFactorizer(BaseEstimator, TransformerMixin):
 
 # %%
 # Run multiple pipelines (concurrently) and concatenate results
-
 num_attribs = list(housing_num)
 cat_attribs = ['ocean_proximity']
 
@@ -423,24 +425,22 @@ forest_rmse_scores = np.sqrt(-(cross_val_score(
     scoring='neg_mean_squared_error', cv=10
 )))
 
-#%%
+# %%
 # Saving and loading model objects with joblib
-from sklearn.externals import joblib
 joblib.dump(forest_reg, "chap2ForestReg.pkl")
 loaded_model = joblib.load('chap2ForestReg.pkl')
 del loaded_model
 
 # Hyperparameter tuning
 
-#%%     
+# %%
 # Grid search
-from sklearn.model_selection import GridSearchCV
 
 # 2 combinatorial searches, first with bootstrapping, second without.
 # Validate each combination with 5-fold CV
 param_grid = [
     {'n_estimators': [3, 10, 30], 'max_features': [2, 4, 6, 8]},
-    {'bootstrap': [False], 'n_estimators': [3, 10], 'max_features': [2 , 3, 4]}
+    {'bootstrap': [False], 'n_estimators': [3, 10], 'max_features': [2, 3, 4]}
 ]
 
 forest_reg = RandomForestRegressor()
@@ -448,19 +448,19 @@ grid_search = GridSearchCV(forest_reg, param_grid, cv=5,
                            scoring='neg_mean_squared_error')
 grid_search.fit(housing_prepared, housing_labels)
 grid_search.best_params_
-# It hit the max allowed IVs on the grid search, 
+# It hit the max allowed IVs on the grid search,
 # so might want to let it try more.
 
 # Now fit with the 'best' hyperparameter values
 grid_search.best_estimator_
-grid_search.predict(housing) #... ect
+grid_search.predict(housing)  # ... ect
 
-# We can easily get the CV scores. 
+# We can easily get the CV scores.
 cvres = grid_search.cv_results_
 for mean_score, params in zip(cvres['mean_test_score'], cvres['params']):
     print(np.sqrt(-mean_score), params)
 
-#%%
+# %%
 # Get and display variable importance measures
 feature_importances = grid_search.best_estimator_.feature_importances_
 extra_attribs = ['rooms_per_hhold', 'pop_per_hhold', 'bedrooms_pre_room']
@@ -468,7 +468,7 @@ cat_one_hot_attribs = ['<1H OCEAN', 'NEAR OCEAN', 'NEAR BAY', 'ISLAND']
 attributes = num_attribs + extra_attribs + cat_one_hot_attribs
 sorted(zip(feature_importances, attributes), reverse=True)
 
-#%% 
+# %%
 # Cross validate on the test set
 final_model = grid_search.best_estimator_
 X_test = strat_test_set.drop('median_house_value', axis=1)
@@ -478,3 +478,31 @@ X_test_prepared = full_pipeline.transform(X_test)
 final_predictions = final_model.predict(X_test_prepared)
 final_mse = mean_squared_error(y_test, final_predictions)
 final_rmse = np.sqrt(final_mse)
+
+
+housing
+# Exercises
+# 1: Explore the support vector machine class
+
+iv_names = attributes
+dv_name = 'median_price'
+
+svm = SVR()
+svm.fit(housing_prepared, housing_labels)
+svm_predictions = svm.predict(housing_prepared)
+svm_rmse = np.sqrt(mean_squared_error(housing_labels, svm_predictions))
+svm_rmse_cv = np.sqrt(-(cross_val_score(svm, 
+                                        housing_prepared,
+                                        housing_labels, 
+                                        scoring='neg_mean_squared_error')))
+
+# Grid search
+search_params = [
+    {'kernel': ['rbf'], 'gamma': ['auto', 1, 5], 'C': [1, 2, 5]},
+    {'kernel': ['poly'], 'degree': [2, 3], 'C': [1, 2, 5]}
+]
+grid_search = GridSearchCV(svm, search_params, cv=3,
+                           scoring='neg_mean_squared_error')
+grid_search.fit(housing_prepared, housing_labels)
+
+# Exercise 3: Add variable importance based var selector in pipeline
