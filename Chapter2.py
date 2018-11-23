@@ -422,3 +422,12 @@ forest_rmse_scores = np.sqrt(-(cross_val_score(
     forest_reg, housing_prepared, housing_labels,
     scoring='neg_mean_squared_error', cv=10
 )))
+
+#%%
+# Saving and loading model objects with joblib
+from sklearn.externals import joblib
+joblib.dump(forest_reg, "chap2ForestReg.pkl")
+loaded_model = joblib.load('chap2ForestReg.pkl')
+del loaded_model
+
+
