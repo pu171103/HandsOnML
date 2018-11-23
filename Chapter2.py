@@ -430,4 +430,27 @@ joblib.dump(forest_reg, "chap2ForestReg.pkl")
 loaded_model = joblib.load('chap2ForestReg.pkl')
 del loaded_model
 
+# Hyperparameter tuning
 
+#%%     
+# Grid search
+from sklearn.model_selection import GridSearchCV
+
+# 2 combinatorial searches, first with bootstrapping, second without.
+# Validate each combination with 5-fold CV
+param_grid = [
+    {'n_estimators': [3, 10, 30], 'max_features': [2, 4, 6, 8]},
+    {'bootstrap': [False], 'n_estimators': [3, 10], 'max_features': [2 , 3, 4]}
+]
+
+forest_reg = RandomForestRegressor()
+grid_search = GridSearchCV(forest_reg, param_grid, cv=5,
+                           scoring='neg_mean_squared_error')
+grid_search.fit(housing_prepared, housing_labels)
+grid_search.best_params_
+# It hit the max allowed IVs on the grid search, 
+# so might want to let it try more.
+
+# Now fit with the 'best' hyperparameter values
+grid_search.best_estimator_
+grid_search.predict(housing) #... ect
