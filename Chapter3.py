@@ -11,8 +11,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_mldata
 from sklearn.linear_model import SGDClassifier
+from sklearn.base import BaseEstimator
+from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.base import clone
 from scipy.io.matlab import loadmat
 
@@ -55,7 +59,7 @@ y_test_5 = (y_test == 5)
 # Convert outcome vector to a 1D array to work with SGDClassifier
 y_train_5 = y_train_5.ravel()
 
-sgd_clf = SGDClassifier(random_state=42)
+sgd_clf = SGDClassifier()
 sgd_clf.fit(X_train, y_train_5)
 sgd_clf.predict([some_digit])
 
@@ -80,3 +84,22 @@ for train_index, test_index in skfolds.split(X_train, y_train_5):
 # Cross validation
 cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring='accuracy')
 
+# Approx 10% of observations are 5s, so we need a better 
+# metric of accuracy than just PCP (we could get 90% accuracy
+# by just guessing 'not-5' every time.)
+
+#%%
+# Confusion matrix and related metrics
+# cross_val_predict() will return 
+# each observation's estimate from when it was in a test fold
+y_train_pred = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3)
+confusion_matrix(y_train_5, y_train_pred)
+precision_score(y_train_5, y_train_pred)
+recall_score(y_train_5, y_train_pred)
+f1_score(y_train_5, y_train_pred)
+
+# See the (continuous) outcome the SGD classifier uses to assign (binary) predictions
+y_scores = sgd_clf.decision_function(X)
+# SGDClassifier() restricts decision threshold = 0 so:
+threshold = 0
+y_scores > threshold 
