@@ -20,6 +20,7 @@ from sklearn.metrics import (precision_score, recall_score, f1_score,
     confusion_matrix, precision_recall_curve, roc_curve, roc_auc_score)
 from sklearn.multiclass import OneVsOneClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 # Use helper function to download MNIST data
 mnist = fetch_mldata('MNIST Original')
@@ -223,3 +224,10 @@ norm_conf_mx = conf_mx / row_sums
 np.fill_diagonal(norm_conf_mx, 0)
 plt.matshow(norm_conf_mx, cmap=plt.cm.gray)
 plt.show() 
+
+#%%
+# Using KNN to do multilabel classification
+# Make two different outcome classes for each case
+y_train_large = (y_train >= 7)
+y_train_odd = (y_train % 2 ==1)
+y_multilabel = np.c_[y_train_large, y_train_odd]
