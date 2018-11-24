@@ -11,29 +11,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_mldata
 from sklearn.linear_model import SGDClassifier
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import cross_val_predict
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import precision_score, recall_score, f1_score
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import roc_curve
-from sklearn.metrics import roc_auc_score
-from sklearn.base import clone
-from scipy.io.matlab import loadmat
+from sklearn.model_selection import (cross_val_predict, cross_val_score, 
+    StratifiedKFold)
+from sklearn.metrics import (precision_score, recall_score, f1_score, 
+    confusion_matrix, precision_recall_curve, roc_curve, roc_auc_score)
+from sklearn.multiclass import OneVsOneClassifier
 
 # Use helper function to download MNIST data
 mnist = fetch_mldata('MNIST Original')
 
-# Read from disk (Matlab format)
-mnist = loadmat('.\\datasets\\mnist\\mnist-original.mat')
-
 # Predictor matrix (pixels here) stored under 'data' key
-# Outcome vector stored under 'label' key ('target' if using helper function)
-# Need to transpose covariate arrays to conform to book's example code.
-X, y = mnist['data'].T, mnist['label'].T
+# Outcome vector stored under 'target' key.
+X, y = mnist['data'], mnist['label']
 
 # Each IV is one pixel position, 28X28 pixels so 784 IVs total (70k images)
 X.shape
@@ -61,10 +53,7 @@ X_train, y_train = X_train[shuffle_index], y_train[shuffle_index]
 y_train_5 = (y_train == 5)
 y_test_5 = (y_test == 5)
 
-# Convert outcome vector to a 1D array to work with SGDClassifier
-y_train_5 = y_train_5.ravel()
-
-sgd_clf = SGDClassifier()
+sgd_clf = SGDClassifier(random_state=42, max_iter=5, tol=None)
 sgd_clf.fit(X_train, y_train_5)
 sgd_clf.predict([some_digit])
 
@@ -181,3 +170,31 @@ plt.plot(fpr, tpr, 'r:', label='SGD')
 plot_roc_curve(fpr_forest, tpr_forest, 'Random Forest')
 plt.legend(loc='lower right')
 plt.show()
+
+#%%
+# Multinomial classification
+# SKLearn does OvA by default if you pass a multi class var to a binary classifier
+sgd_clf.fit(X_train, y_train)
+sgd_clf.predict([some_digit])
+some_digit_scores = sgd_clf.decision_function([some_digit])
+np.argmax(some_digit_scores)
+sgd_clf.classes_
+
+# Can force OvO or OvA by importing OneVsOne(Rest)Classifier
+# and pass a binary classifier to its constructor
+ovo_clf = OneVsOneClassifier(SGDClassifier(
+    random_state=42, max_iter=5, tol=None))
+ovo_clf.fit(X_train, y_train)
+ovo_clf.predict([some_digit])
+len(ovo_clf.estimators_)
+
+#%%
+# Multinomial random forest
+forest_clf.fit(X_train, y_train)
+forest_clf.predict([some_digit])
+
+# Get class probabilities for a prediction
+forest_clf.predict_proba([some_digit])
+
+# Cross Validation
+cross_val_score(sgd_clf, X_train, y_train, cv=3, scoring='accuracy')
