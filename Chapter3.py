@@ -176,3 +176,8 @@ y_probas_forest = cross_val_predict(forest_clf, X_train, y_train_5, cv=3,
 y_scores_forest = y_probas_forest[:, 1]
 fpr_forest, tpr_forest, thresholds_forest = roc_curve(
     y_train_5, y_scores_forest)
+
+plt.plot(fpr, tpr, 'r:', label='SGD')
+plot_roc_curve(fpr_forest, tpr_forest, 'Random Forest')
+plt.legend(loc='lower right')
+plt.show()
