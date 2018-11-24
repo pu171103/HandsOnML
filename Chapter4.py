@@ -9,7 +9,7 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, SGDRegressor
 
 #%%
 # OLS Regression
@@ -39,3 +39,47 @@ lin_reg.fit(X, y)
 lin_reg.intercept_, lin_reg.coef_
 lin_reg.predict(X_new)
 
+# LinearRegression class inherits from numppy's lstsq class:
+theta_best_svd, residuals, rank, s = np.linalg.lstsq(X_b, y, rcond=1e-6)
+# This calculates Theta hat with the pseudoinverse of X
+# This method is useful if the var/cov matrix is singular (or close to it)
+# We can also do directly:
+np.linalg.pinv(X_b).dot(y)
+
+#%%
+# Linear regression with gradient descent
+# Batch
+eta = 0.1
+n_iterations = 1000
+m = 100
+
+theta = np.random.randn(2, 1) # random start
+
+for iteration in range(n_iterations):
+    gradients = 2/m * X_b.T.dot(X_b.dot(theta) - y)
+    theta = theta - eta * gradients
+
+#%%
+# Stochastic
+n_epochs = 50
+t0, t1 = 5, 50 # learning schedule hyperparameters
+
+def learning_schedule(t):
+    return t0 / (t + t1)
+
+theta = np.random.randn(2, 1)
+
+for epoch in range(n_epochs):
+    for i in range(m):
+        random_index = np.random.randint(m)
+        xi = X_b[random_index:random_index + 1]
+        yi = y[random_index:random_index + 1]
+        gradients = 2 * xi.T.dot(xi.dot(theta) - yi)
+        eta = learning_schedule(epoch * m + i)
+        theta = theta - eta * gradients
+
+#%%
+# Stochastic gradient descent linear regression with SKLearn
+sgd_reg = SGDRegressor(n_iter=50, penalty=None, eta0=0.1)
+sgd_reg.fit(X, y.ravel())
+sgd_reg.intercept_, sgd_reg.coef_
