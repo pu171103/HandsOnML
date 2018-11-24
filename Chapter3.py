@@ -19,6 +19,7 @@ from sklearn.model_selection import (cross_val_predict, cross_val_score,
 from sklearn.metrics import (precision_score, recall_score, f1_score, 
     confusion_matrix, precision_recall_curve, roc_curve, roc_auc_score)
 from sklearn.multiclass import OneVsOneClassifier
+from sklearn.preprocessing import StandardScaler
 
 # Use helper function to download MNIST data
 mnist = fetch_mldata('MNIST Original')
@@ -189,6 +190,7 @@ ovo_clf.predict([some_digit])
 len(ovo_clf.estimators_)
 
 #%%
+from sklearn.preprocessing import StandardScaler
 # Multinomial random forest
 forest_clf.fit(X_train, y_train)
 forest_clf.predict([some_digit])
@@ -198,3 +200,26 @@ forest_clf.predict_proba([some_digit])
 
 # Cross Validation
 cross_val_score(sgd_clf, X_train, y_train, cv=3, scoring='accuracy')
+
+# Can potentially boost performance by scaling
+scaler=StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train.astype(np.float64))
+cross_val_score(sgd_clf, X_train_scaled, y_train, cv=3, scoring='accuracy')
+
+# Diagnostics
+# Confusion matrix
+y_train_pred = cross_val_predict(sgd_clf, X_train_scaled, y_train, cv=3)
+conf_mx = confusion_matrix(y_train, y_train_pred)
+# We can just treat the matrix as a bitmap and visualize it
+plt.matshow(conf_mx, cmap=plt.cm.gray)
+plt.show()
+
+#%%
+# Transform confusion matrix to error matrix by dividing 
+# off diagnoals by row sums (wrong classification / class total) 
+# and zero fill main diagonal
+row_sums = conf_mx.sum(axis=1, keepdims=True)
+norm_conf_mx = conf_mx / row_sums
+np.fill_diagonal(norm_conf_mx, 0)
+plt.matshow(norm_conf_mx, cmap=plt.cm.gray)
+plt.show() 
