@@ -25,7 +25,7 @@ mnist = fetch_mldata('MNIST Original')
 
 # Predictor matrix (pixels here) stored under 'data' key
 # Outcome vector stored under 'target' key.
-X, y = mnist['data'], mnist['label']
+X, y = mnist['data'], mnist['target']
 
 # Each IV is one pixel position, 28X28 pixels so 784 IVs total (70k images)
 X.shape
