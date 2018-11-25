@@ -10,12 +10,13 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.linear_model import (LinearRegression, SGDRegressor, 
-        Ridge, Lasso, ElasticNet)
+        Ridge, Lasso, ElasticNet, LogisticRegression)
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from sklearn import datasets
 
 #%%
 # OLS Regression
@@ -190,3 +191,18 @@ for epoch in range(1000):
                 minimm_val_error = val_error
                 best_epoch = epoch
                 best_model = clone(sgd_reg)
+
+# Logistic regression with SKLearn
+iris = datasets.load_iris()
+list(iris.keys())
+X = iris['data'][:, 3:] # petal width
+y = (iris['target'] == 2).astype(np.int) # 1 if == Virginica
+
+log_reg = LogisticRegression()
+log_reg.fit(X, y)
+
+# np.linspace(min, max, n) generates n evenly spaced numbers between min and max
+X_new = np.linspace(0, 3, 1000).reshape(-1, 1)
+y_proba = log_reg.predict_proba(X_new)
+plt.plot(X_new, y_proba[:, 1], 'g-', label='Iris-Virginica')
+plt.plot(X_new, y_proba[:, 0], 'b--', label='Other')
