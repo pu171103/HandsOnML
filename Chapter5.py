@@ -11,7 +11,7 @@ from sklearn import datasets
 from sklearn.datasets import make_moons
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, SVC
 
 #%%
 # Soft margin SVM with SKLearn
@@ -38,3 +38,11 @@ polynomial_svm_clf = Pipeline([
 X, y = make_moons()
 polynomial_svm_clf.fit(X, y)
 polynomial_svm_clf.predict(X[:10, :])
+
+#%%
+# The Kernel Trick
+poly_kernel_svm_clf = Pipeline([
+    ('scaler', StandardScaler()),
+    ('svm_clf', SVC(kernel='poly', degree=3, coef0=1, C=5))
+])
+
