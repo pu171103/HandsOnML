@@ -9,11 +9,13 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression, SGDRegressor
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import (LinearRegression, SGDRegressor, 
+        Ridge, Lasso, ElasticNet)
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.base import clone
 
 #%%
 # OLS Regression
@@ -133,3 +135,58 @@ polynomial_regression = Pipeline([
 ])
 plot_learning_curves(polynomial_regression, X, y)
 plt.show()
+
+#%%
+# Regularization
+# Ridge Regression with SKLearn
+ridge_reg = Ridge(alpha=1, solver='cholesky')
+ridge_reg.fit(X, y)
+ridge_reg.predict([[1.5]])
+
+sgd_reg = SGDRegressor(penalty='l2') #i.e. l2 norm
+sgd_reg.fit(X, y.ravel())
+sgd_reg.predict([[1.5]])
+
+#%%
+# LASSO Regression with SKLearn
+lasso_reg = Lasso(alpha=0.1)
+lasso_reg.fit(X, y)
+lasso_reg.predict([[1.5]])
+
+sgd_reg = SGDRegressor(penalty='l1')
+sgd_reg.fit(X, y)
+sgd_reg.predict([[1.5]])
+
+#%%
+# Elastic Net with SKLearn
+elastic_net = ElasticNet(alpha=0.1, l1_ratio=0.5)
+elastic_net.fit(X, y)
+elastic_net.predict([[1.5]])
+
+#%%
+# Early stopping
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
+poly_scaler = Pipeline([
+        ('poly_feature', PolynomialFeatures(degree=90, include_bias=False)),
+        ('std_scaler', StandardScaler())
+])
+X_train_poly_scaled = poly_scaler.fit_transform(X_train)
+X_val_poly_scaled = poly_scaler.transform(X_val)
+
+# warm_start=True means the optimizer will begin with 
+# parameter values reached in the previous iteration
+sgd_reg = SGDRegressor(n_iter=1, warm_start=True, penalty=None,
+        learning_rate='constant', eta0=0.0005)
+
+minimum_val_error = float('inf')
+best_epoch = None
+best_model = None
+
+for epoch in range(1000):
+        sgd_reg.fit(X_train_poly_scaled, y_train.ravel())
+        y_val_predict = sgd_reg.predict(X_val_poly_scaled)
+        val_error = mean_squared_error(y_val, y_val_predict)
+        if val_error < minimum_val_error:
+                minimm_val_error = val_error
+                best_epoch = epoch
+                best_model = clone(sgd_reg)
