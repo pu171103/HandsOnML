@@ -25,11 +25,12 @@ voting_clf = VotingClassifier(
     estimators=[('lr', log_clf), ('rf', rnd_clf), ('svc', svm_clf)],
     voting='hard'
 )
-voting_clf.fit(X_train, y_train)
+m0 = voting_clf.fit(X_train, y_train)
 
 #%% 
 # Check each classifier's accuracy
 for clf in (log_clf, rnd_clf, svm_clf, voting_clf):
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    print(clf.__class__.__name__, accuracy_score(y_test, y_pred))
+    m0 = clf.fit(X_train, y_train)
+    y_pred = m0.predict(X_test)
+    print(m0.__class__.__name__, accuracy_score(y_test, y_pred))
+
