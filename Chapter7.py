@@ -11,9 +11,10 @@ from sklearn.ensemble import (
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
-from sklearn.datasets import make_moons
+from sklearn.datasets import make_moons, load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+
 
 #%% 
 # Specifying a voting classifier with SKLearn
@@ -68,4 +69,13 @@ bag_clf = BaggingClassifier(
     ),
     n_estimators=500, max_samples=1.0, bootstrap=True, n_jobs=4
 )
+
+#%%
+# Variable importance features
+iris = load_iris()
+rnd_clf =  RandomForestClassifier(n_estimators=500, n_jobs=4)
+rnd_clf.fit(iris['data'], iris['target'])
+
+for name, score in zip(iris['feature_names'], rnd_clf.feature_importances_):
+    print(name, score)
 
