@@ -45,6 +45,7 @@ bag_clf = BaggingClassifier(
 bag_fit = bag_clf.fit(X_train, y_train)
 y_pred = bag_fit.predict(X_test)
 
+#%%
 # Cross validate on out of bag observations
 bag_clf = BaggingClassifier(
     DecisionTreeClassifier(), n_estimators=500,
@@ -53,3 +54,18 @@ bag_clf = BaggingClassifier(
 bag_fit = bag_clf.fit(X_train, y_train)
 bag_fit.oob_score_
 bag_fit.oob_decision_function_
+
+#%%
+# Specify a random forest with SciKit Learn
+rnd_clf = RandomForestClassifier(n_estimators=500, max_leaf_nodes=16, n_jobs=4)
+rnd_fit = rnd_clf.fit(X_train, y_train)
+y_pred_rf = rnd_fit.predict(X_test)
+
+# Same model built with BaggingClassifier()
+bag_clf = BaggingClassifier(
+    DecisionTreeClassifier(
+        splitter='random', max_leaf_nodes=16
+    ),
+    n_estimators=500, max_samples=1.0, bootstrap=True, n_jobs=4
+)
+
