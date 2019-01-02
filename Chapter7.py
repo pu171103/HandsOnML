@@ -7,13 +7,14 @@
 
 #%%
 from sklearn.ensemble import (
-    RandomForestClassifier, VotingClassifier, BaggingClassifier)
-from sklearn.tree import DecisionTreeClassifier
+    RandomForestClassifier, VotingClassifier, BaggingClassifier,
+    AdaBoostClassifier, GradientBoostingRegressor)
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.datasets import make_moons, load_iris
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, mean_squared_error
 
 
 #%% 
@@ -79,3 +80,45 @@ rnd_clf.fit(iris['data'], iris['target'])
 for name, score in zip(iris['feature_names'], rnd_clf.feature_importances_):
     print(name, score)
 
+#%%
+# Boosting
+# AdaBoost Method
+# SAMME.R uses class probabilities, SAMME uses classifications
+# Want to keep individual model complexity low to keep down variance
+ada_clf = AdaBoostClassifier(
+    DecisionTreeClassifier(max_depth=1), 
+    n_estimators=200, algorithm='SAMME.R', learning_rate=0.5
+)
+ada_clf.fit(X_train, y_train)
+
+# Gradient Boosting, Step by Step
+# Train 3 models, m1, and m2 predicting previous model's errors
+tree_reg1 = DecisionTreeRegressor(max_depth=2)
+tree_reg1.fit(X_train, y_train)
+
+y2 = y_train - tree_reg1.predict(X_train)
+tree_reg2 = DecisionTreeRegressor(max_depth=2)
+tree_reg2.fit(X_train, y2)
+
+y3 = y2 - tree_reg2.predict(X_train)
+tree_reg3 = DecisionTreeRegressor(max_depth=2)
+tree_reg3.fit(X_train, y3)
+
+y_pred = sum(tree.predict(X_test) for tree in 
+    (tree_reg1, tree_reg2, tree_reg3)
+)
+
+# Same as above, but using SciKit Learn's GradientBOostingRegressor()
+gbrt = GradientBoostingRegressor(
+    max_depth=2, n_estimators=3, learning_rate=1.0
+)
+gbrt.fit(X_train, y_train)
+
+# Lowering learning rate can allow the ensemble to more 
+# methodically approach a good fit, but too many trees 
+# tend to lead to overfitting, so we usually employ early stopping. 
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=120)
+gbrt.fit(X_train, y_train)
+y_pred = gbrt.predict(X_test)
+errors = [mean_squared_error(y_test, y_pred)]
