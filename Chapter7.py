@@ -6,6 +6,7 @@
 # Date: 11/25/2018
 
 #%%
+import numpy as np
 from sklearn.ensemble import (
     RandomForestClassifier, VotingClassifier, BaggingClassifier,
     AdaBoostClassifier, GradientBoostingRegressor)
@@ -121,4 +122,36 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=120)
 gbrt.fit(X_train, y_train)
 y_pred = gbrt.predict(X_test)
-errors = [mean_squared_error(y_test, y_pred)]
+
+# Measure error with increasing number of estimators. 
+errors = [
+    mean_squared_error(y_test, y_pred)
+    for y_pred in gbrt.staged_predict(X_test)
+]
+best_N_estimators = np.argmin(errors)
+gbrt_best = GradientBoostingRegressor(
+    max_depth=2, n_estimators=best_N_estimators
+)
+gbrt_best.fit(X_train, y_train)
+
+# Manual early stopping
+# Stopping criteria: 5 sucessive model runs with no reduction in error
+# warm_start=True keeps trees from previous iterations
+gbrt=GradientBoostingRegressor(max_depth=2, warm_start=True)
+
+min_val_error = float('inf')
+error_going_up = 0
+
+for n_estimators in range(1, 120):
+    gbrt.n_estimators = n_estimators
+    gbrt.fit(X_train, y_train)
+    y_pred = gbrt.predict(X_test)
+
+    val_error = mean_squared_error(y_test, y_pred)
+    if val_error < min_val_error:
+        min_val_error = val_error
+        error_going_up = 0
+    else:
+        error_going_up += 1
+        if error_going_up == 5:
+            break
